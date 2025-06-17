@@ -1,0 +1,23 @@
+//FUNDO
+
+function onSelectionChange(e) {
+  var sheet = e.source.getActiveSheet();
+  if (sheet.getName() !== "REGISTRO") return;
+
+  var startRow = 17;
+  var startCol = 1;
+  var lastCol = 17; // Ajustado para coluna Q (17)
+
+  var lastRow = sheet.getLastRow();
+  if (lastRow < startRow) lastRow = startRow;
+
+  var selectedCell = e.range;
+  var selectedRow = selectedCell.getRow();
+  var selectedCol = selectedCell.getColumn();
+
+  sheet.getRange(startRow, startCol, lastRow - startRow + 1, lastCol).setBackground(null);
+
+  if (selectedRow >= startRow && selectedRow <= lastRow && selectedCol >= startCol && selectedCol <= lastCol) {
+    sheet.getRange(selectedRow, startCol, 1, lastCol).setBackground("#7f86b1");
+  }
+}
