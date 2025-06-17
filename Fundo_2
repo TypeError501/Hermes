@@ -1,0 +1,22 @@
+//fundo2
+
+function onSelectionChange(e) {
+  var sheet = e.source.getActiveSheet();
+  if (sheet.getName() !== "CADASTRO E CONSULTA") return;
+
+  var startRow = 8;
+  var startCol = 3; // Coluna C
+  var lastRow = 15; // Limite superior da faixa (C15), fixo
+
+  var selectedCell = e.range;
+  var selectedRow = selectedCell.getRow();
+  var selectedCol = selectedCell.getColumn();
+
+  // Limpar formatação anterior apenas nas células C8:C15
+  sheet.getRange(startRow, startCol, lastRow - startRow + 1, 1).setBackground(null);
+
+  // Verificar se a linha selecionada está na faixa 8 a 15 e iluminar a célula correspondente em C
+  if (selectedRow >= startRow && selectedRow <= lastRow) {
+    sheet.getRange(selectedRow, startCol, 1, 1).setBackground("#7f86b1"); // Ilumina a célula em C da linha selecionada
+  }
+}
