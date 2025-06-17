@@ -1,0 +1,57 @@
+//CADASTRO CELULAR
+
+function onEdit(e) {
+  var sheet = e.range.getSheet();
+  var cell = e.range;
+
+  // Verifica se a edição foi na aba e célula da caixa de seleção
+  if (sheet.getName() === "CADASTRO E CONSULTA" && cell.getA1Notation() === "C21") {
+    if (cell.getValue() === true) { // caixa marcada
+      cadastroFuncionario();       // chama sua função de cadastro
+      cell.setValue(false);        // desmarca a caixa para poder usar novamente
+    }
+  }
+}
+
+function cadastroFuncionario() {
+  try {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var wsRegistro = ss.getSheetByName("REGISTRO");
+    var wsCadastro = ss.getSheetByName("CADASTRO E CONSULTA");
+    
+    var dadosRange = wsCadastro.getRange("C8:C15");
+    var dados = dadosRange.getValues();
+    
+    var temDados = dados.some(function(row) {
+      return row[0] !== "" && row[0] !== null;
+    });
+    
+    if (!temDados) {
+      // No celular, alertas podem travar, então escreva mensagem na planilha
+      wsCadastro.getRange("C6").setValue("Não há dados para copiar.");
+      return;
+    } else {
+      wsCadastro.getRange("C6").clearContent();
+    }
+    
+    wsRegistro.insertRows(17, 1);
+    
+    var dadosTranspostos = [dados.map(function(row) { return row[0]; })];
+    wsRegistro.getRange(17, 1, 1, dadosTranspostos[0].length).setValues(dadosTranspostos);
+    
+    var sourceRange = wsRegistro.getRange(18, 1, 1, wsRegistro.getLastColumn());
+    var targetRange = wsRegistro.getRange(17, 1, 1, wsRegistro.getLastColumn());
+    sourceRange.copyTo(targetRange, {formatOnly:true});
+    
+    dadosRange.clearContent();
+    
+    // Caso tenha função atualizar, chame-a aqui
+    // atualizar();
+    
+    // Opcional: mensagem de sucesso (escreva na planilha)
+    wsCadastro.getRange("C6").setValue("Cadastro realizado com sucesso!");
+    
+  } catch (e) {
+    wsCadastro.getRange("C6").setValue("Erro: " + e.message);
+  }
+}
