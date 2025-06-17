@@ -1,0 +1,44 @@
+//COPIAR
+
+function copiar() {
+  try {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var wsRegistro = ss.getSheetByName("REGISTRO");
+    
+    if (!wsRegistro) {
+      SpreadsheetApp.getUi().alert("Aba 'REGISTRO' não encontrada.");
+      return;
+    }
+    
+    var startRow = 17;
+    var startCol = 1;
+    var lastRow = wsRegistro.getLastRow();
+    var lastCol = wsRegistro.getLastColumn();
+    if (lastRow < startRow) lastRow = startRow;
+    if (lastCol < 16) lastCol = 16; // Minimum to P
+
+    var intervaloTabela = wsRegistro.getRange(startRow, startCol, lastRow - startRow + 1, lastCol);
+    var valores = intervaloTabela.getValues();
+    
+    for (var i = 0; i < valores.length; i++) {
+      for (var j = 0; j < valores[i].length; j++) {
+        if (typeof valores[i][j] === "boolean") {
+          valores[i][j] = valores[i][j] ? "VERDADEIRO" : "FALSO";
+        }
+      }
+    }
+    
+    var nomeAbaTemp = "Tabela1_Somente_Valores";
+    var wsTemp = ss.getSheetByName(nomeAbaTemp);
+    if (!wsTemp) {
+      wsTemp = ss.insertSheet(nomeAbaTemp);
+    } else {
+      wsTemp.clear();
+    }
+    
+    wsTemp.getRange(1, 1, valores.length, valores[0].length).setValues(valores);
+    SpreadsheetApp.getUi().alert("Dados da Tabela 1 copiados sem formatação para a aba '" + nomeAbaTemp + "'.");
+  } catch (e) {
+    SpreadsheetApp.getUi().alert("Erro: " + e.message);
+  }
+}
