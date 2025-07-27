@@ -1,0 +1,76 @@
+function onEdit(e) {
+  // Gatilho simples
+  if (!e) return;
+  const sheet = e.range.getSheet();
+  if (sheet.getName() !== "REGISTRO") return;
+
+  const searchCell = "A6";
+  const indicatorCell = "B6";
+  const dataStartRow = 17;
+  const dataEndRow = 400;
+  const dataStartCol = 1;
+  const dataEndCol = 8;
+
+  if (e.range.getA1Notation() !== searchCell) return;
+
+  const val = e.range.getValue().toString();
+  const indicatorRange = sheet.getRange(indicatorCell);
+
+  // Atualiza indicador
+  if (val.trim() === "") {
+    indicatorRange.setValue("Pesquisar");
+  } else {
+    indicatorRange.clearContent();
+  }
+
+  // Limpar texto "Pesquisar" se digitado
+  if (val === "Pesquisar") {
+    e.range.setValue("");
+    indicatorRange.setValue("Pesquisar");
+    return;
+  }
+
+  const searchTerm = val.toLowerCase().trim();
+
+  const numRows = dataEndRow - dataStartRow + 1;
+  const numCols = dataEndCol - dataStartCol + 1;
+
+  const dataRange = sheet.getRange(dataStartRow, dataStartCol, numRows, numCols);
+  const dataValues = dataRange.getValues();
+
+  // Caso vazio, mostrar todas
+  if (searchTerm === "") {
+    sheet.showRows(dataStartRow, numRows);
+    return;
+  }
+
+  // Antes de esconder, mostre todas para limpar filtro
+  sheet.showRows(dataStartRow, numRows);
+
+  // Em seguida, esconda linhas que não contêm o termo
+  for (let i = 0; i < dataValues.length; i++) {
+    const row = dataValues[i];
+    const rowText = row.map(cell => cell.toString().toLowerCase()).join(" ");
+    if (!rowText.includes(searchTerm)) {
+      sheet.hideRows(dataStartRow + i);
+    }
+  }
+}
+
+// Função para aplicar estilos na abertura
+function aplicarEstilosBarraPesquisa() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName("REGISTRO");
+  if (!sheet) return;
+  const searchCell = sheet.getRange("A6");
+  const indicatorCell = sheet.getRange("B6");
+
+  searchCell.setBackground("#ADD8E6");
+  indicatorCell.clearContent();
+  indicatorCell.setValue("Pesquisar");
+  indicatorCell.setFontColor("#000000");
+}
+
+function onOpen() {
+  aplicarEstilosBarraPesquisa();
+}
