@@ -1,0 +1,134 @@
+function onEdit(e) {
+  if (!e) return;
+
+  const sheetName = "REGISTRO";
+  const searchCell = "A6";
+  const indicatorCell = "B6";
+  const dataStartRow = 17;
+  const dataEndRow = 400;
+  const dataStartCol = 1;
+  const dataEndCol = 8;
+
+  const sheet = e.range.getSheet();
+  if (sheet.getName() !== sheetName) return;
+  if (e.range.getA1Notation() !== searchCell) return;
+
+  const val = e.range.getValue().toString().trim();
+  const indicatorRange = sheet.getRange(indicatorCell);
+
+  // Atualiza o texto indicador
+  if (val === "") {
+    indicatorRange.setValue("Pesquisar");
+  } else {
+    indicatorRange.clearContent();
+  }
+
+  if (val.toLowerCase() === "pesquisar") {
+    e.range.setValue("");
+    indicatorRange.setValue("Pesquisar");
+    return;
+  }
+
+  const searchTerm = val.toLowerCase();
+
+  const numRows = dataEndRow - dataStartRow + 1;
+  const numCols = dataEndCol - dataStartCol + 1;
+
+  const dataRange = sheet.getRange(dataStartRow, dataStartCol, numRows, numCols);
+  const dataValues = dataRange.getValues();
+
+  // Mostrar todas as linhas e remover todas as proteções anteriores do intervalo
+  sheet.showRows(dataStartRow, numRows);
+  removeProtections(sheet, dataStartRow, dataEndRow);
+
+  if (searchTerm === "") {
+    indicatorRange.setValue("Pesquisar");
+    return; // mostra todas, nada pra proteger
+  }
+
+  // Esconder linhas que não correspondem à pesquisa
+  let linhasParaProteger = [];
+
+  for (let i = 0; i < dataValues.length; i++) {
+    const row = dataValues[i];
+    const rowText = row.map(cell => cell.toString().toLowerCase()).join(" ");
+    const linhaAtual = dataStartRow + i;
+    if (!rowText.includes(searchTerm)) {
+      sheet.hideRows(linhaAtual);
+      linhasParaProteger.push(linhaAtual);
+    }
+  }
+
+  // Proteger linhas ocultas para não permitir edição
+  protegerLinhas(sheet, linhasParaProteger);
+}
+
+
+// Remove todas as proteções nas linhas do intervalo definido
+function removeProtections(sheet, startRow, endRow) {
+  const protections = sheet.getProtections(SpreadsheetApp.ProtectionType.RANGE);
+
+  protections.forEach(protection => {
+    const range = protection.getRange();
+    const rangeRowStart = range.getRow();
+    const rangeRowEnd = rangeRowStart + range.getNumRows() - 1;
+
+    if (
+      range.getSheet().getName() === sheet.getName() &&
+      !(rangeRowEnd < startRow || rangeRowStart > endRow)
+    ) {
+      // Remove a proteção para linhas no intervalo afetado
+      protection.remove();
+    }
+  });
+}
+
+// Adiciona proteção nas linhas informadas
+function protegerLinhas(sheet, linhas) {
+  if (linhas.length === 0) return;
+
+  // Para otimizar, agrupa linhas consecutivas e cria intervalos de proteção
+  linhas.sort((a, b) => a - b);
+
+  let inicioIntervalo = linhas[0];
+  let fimIntervalo = inicioIntervalo;
+
+  for (let i = 1; i <= linhas.length; i++) {
+    const linhaAtual = linhas[i];
+    if (linhaAtual === fimIntervalo + 1) {
+      // Continua intervalo
+      fimIntervalo = linhaAtual;
+    } else {
+      // Cria proteção para intervalo acumulado
+      const rangeProtegido = sheet.getRange(inicioIntervalo, 1, fimIntervalo - inicioIntervalo + 1, sheet.getMaxColumns());
+      const protection = rangeProtegido.protect().setDescription("Linhas filtradas - protegidas");
+      // Permite edição somente ao proprietário
+      protection.removeEditors(protection.getEditors());
+      protection.addEditor(sheet.getOwner().getEmail());
+      protection.setWarningOnly(false);
+
+      // Inicia novo intervalo se houver próxima linha
+      inicioIntervalo = linhaAtual;
+      fimIntervalo = linhaAtual;
+    }
+  }
+}
+
+// Aplica estilos ao abrir a planilha
+function aplicarEstilosBarraPesquisa() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName("REGISTRO");
+  if (!sheet) return;
+
+  const searchCell = sheet.getRange("A6");
+  const indicatorCell = sheet.getRange("B6");
+
+  searchCell.setBackground("#ADD8E6");
+  indicatorCell.clearContent();
+  indicatorCell.setValue("Pesquisar");
+  indicatorCell.setFontColor("#000000");
+}
+
+function onOpen() {
+  aplicarEstilosBarraPesquisa();
+}
